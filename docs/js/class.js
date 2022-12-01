@@ -1,0 +1,65 @@
+class ReportFile {
+    jsonContent;
+
+    constructor(file_name, year, month) {
+        this.file_name = file_name;
+        this.year = year;
+        this.month = month;
+    }
+
+    //Year takes the year from the document title.
+    Year() {
+        return this.year;
+    }
+
+    //MonthName converts the month number into a month name.
+    MonthName() {
+        return this.month;
+    }
+
+    //ParseCVEs grabs all the CVE reports form the document.
+    FetchJsonFromFile() {
+        fetch(`results/${this.file_name}`)
+            .then((response) => response.json())
+            .then(json => {
+                this.jsonContent = json
+            });
+    }
+}
+
+class CVE {
+    packages = [];
+
+    constructor(id, title, packages, description, uri, severity) {
+        this.id = id;
+        this.title = title;
+        this.packages.push(packages);
+        this.description = description;
+        this.uri = uri;
+        this.severity = severity;
+    }
+
+    AddPackage(pkg) {
+        this.packages.push(pkg)
+    }
+}
+
+class CVEs {
+    cves = new Map();
+
+    constructor(results) {
+        results.Vulnerabilities.forEach((res) => {
+            if (this.cves.has(res.VulnerabilityID)) {
+                let cveReport = this.cves.get(res.VulnerabilityID);
+                cveReport.AddPackage(res.PkgName);
+            } else {
+                let cve = new CVE(res.VulnerabilityID, res.Title, res.PkgName, res.Description, res.PrimaryURL, res.Severity);
+                this.cves.set(res.VulnerabilityID, cve);
+            }
+        });
+    }
+
+    GetCVEs() {
+        return this.cves;
+    }
+}
